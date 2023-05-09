@@ -1,3 +1,3 @@
-module github.com/ishidawataru/sctp
+module github.com/loxilb-io/sctp
 
 go 1.12
