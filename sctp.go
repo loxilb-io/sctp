@@ -138,6 +138,7 @@ type InitMsg struct {
 	MaxInstreams   uint16
 	MaxAttempts    uint16
 	MaxInitTimeout uint16
+	Block          bool
 }
 
 type SndRcvInfo struct {

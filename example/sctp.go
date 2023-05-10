@@ -2,13 +2,12 @@ package main
 
 import (
 	"flag"
+	"github.com/loxilb-io/sctp"
 	"log"
 	"math/rand"
 	"net"
 	"strings"
 	"time"
-
-	"github.com/ishidawataru/sctp"
 )
 
 func serveClient(conn net.Conn, bufsize int) error {

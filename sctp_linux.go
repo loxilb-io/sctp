@@ -1,4 +1,6 @@
+//go:build linux && !386
 // +build linux,!386
+
 // Copyright 2019 Wataru Ishida. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,10 +21,10 @@ package sctp
 import (
 	"io"
 	"net"
+	"runtime"
 	"sync/atomic"
 	"syscall"
 	"unsafe"
-	"runtime"
 )
 
 func setsockopt(fd int, optname, optval, optlen uintptr) (uintptr, uintptr, error) {
@@ -301,6 +303,15 @@ func dialSCTPExtConfig(network string, laddr, raddr *SCTPAddr, options InitMsg, 
 			return nil, err
 		}
 	}
+
+	// Set non-blocking call if requested
+	if !options.Block {
+		flag, _, serr := syscall.Syscall(syscall.SYS_FCNTL, uintptr(sock), uintptr(syscall.F_GETFL), 0)
+		if serr == 0 {
+			syscall.Syscall(syscall.SYS_FCNTL, uintptr(sock), uintptr(syscall.F_GETFL), flag&syscall.O_NONBLOCK)
+		}
+	}
+
 	_, err = SCTPConnect(sock, raddr)
 	if err != nil {
 		return nil, err

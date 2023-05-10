@@ -1,4 +1,6 @@
+//go:build !linux || (linux && 386)
 // +build !linux linux,386
+
 // Copyright 2019 Wataru Ishida. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
