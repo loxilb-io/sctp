@@ -255,11 +255,11 @@ func DialSCTP(net string, laddr, raddr *SCTPAddr) (*SCTPConn, error) {
 
 // DialSCTPExt - same as DialSCTP but with given SCTP options
 func DialSCTPExt(network string, laddr, raddr *SCTPAddr, options InitMsg) (*SCTPConn, error) {
-	return dialSCTPExtConfig(network, laddr, raddr, options, nil)
+	return dialSCTPExtConfig(network, laddr, raddr, options, true, nil)
 }
 
 // dialSCTPExtConfig - same as DialSCTP but with given SCTP options and socket configuration
-func dialSCTPExtConfig(network string, laddr, raddr *SCTPAddr, options InitMsg, control func(network, address string, c syscall.RawConn) error) (*SCTPConn, error) {
+func dialSCTPExtConfig(network string, laddr, raddr *SCTPAddr, options InitMsg, block bool, control func(network, address string, c syscall.RawConn) error) (*SCTPConn, error) {
 	af, ipv6only := favoriteAddrFamily(network, laddr, raddr, "dial")
 	sock, err := syscall.Socket(
 		af,
@@ -305,7 +305,7 @@ func dialSCTPExtConfig(network string, laddr, raddr *SCTPAddr, options InitMsg, 
 	}
 
 	// Set non-blocking call if requested
-	if !options.Block {
+	if !block {
 		flag, _, serr := syscall.Syscall(syscall.SYS_FCNTL, uintptr(sock), uintptr(syscall.F_GETFL), 0)
 		if serr == 0 {
 			syscall.Syscall(syscall.SYS_FCNTL, uintptr(sock), uintptr(syscall.F_GETFL), flag&syscall.O_NONBLOCK)

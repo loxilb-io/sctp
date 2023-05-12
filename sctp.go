@@ -727,6 +727,9 @@ type SocketConfig struct {
 
 	// InitMsg is the options to send in the initial SCTP message
 	InitMsg InitMsg
+
+	// Indicate if the socket is blocking or not
+	Block bool
 }
 
 func (cfg *SocketConfig) Listen(net string, laddr *SCTPAddr) (*SCTPListener, error) {
@@ -734,5 +737,5 @@ func (cfg *SocketConfig) Listen(net string, laddr *SCTPAddr) (*SCTPListener, err
 }
 
 func (cfg *SocketConfig) Dial(net string, laddr, raddr *SCTPAddr) (*SCTPConn, error) {
-	return dialSCTPExtConfig(net, laddr, raddr, cfg.InitMsg, cfg.Control)
+	return dialSCTPExtConfig(net, laddr, raddr, cfg.InitMsg, cfg.Block, cfg.Control)
 }
