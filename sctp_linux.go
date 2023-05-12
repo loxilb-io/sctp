@@ -308,7 +308,7 @@ func dialSCTPExtConfig(network string, laddr, raddr *SCTPAddr, options InitMsg, 
 	if !block {
 		flag, _, serr := syscall.Syscall(syscall.SYS_FCNTL, uintptr(sock), uintptr(syscall.F_GETFL), 0)
 		if serr == 0 {
-			syscall.Syscall(syscall.SYS_FCNTL, uintptr(sock), uintptr(syscall.F_GETFL), flag&syscall.O_NONBLOCK)
+			syscall.Syscall(syscall.SYS_FCNTL, uintptr(sock), uintptr(syscall.F_SETFL), flag|syscall.O_NONBLOCK)
 		}
 	}
 
