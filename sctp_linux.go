@@ -249,13 +249,13 @@ func (ln *SCTPListener) Close() error {
 }
 
 // DialSCTP - bind socket to laddr (if given) and connect to raddr
-func DialSCTP(net string, laddr, raddr *SCTPAddr) (*SCTPConn, error) {
-	return DialSCTPExt(net, laddr, raddr, InitMsg{NumOstreams: SCTP_MAX_STREAM})
+func DialSCTP(net string, laddr, raddr *SCTPAddr, block bool) (*SCTPConn, error) {
+	return DialSCTPExt(net, laddr, raddr, block, InitMsg{NumOstreams: SCTP_MAX_STREAM})
 }
 
 // DialSCTPExt - same as DialSCTP but with given SCTP options
-func DialSCTPExt(network string, laddr, raddr *SCTPAddr, options InitMsg) (*SCTPConn, error) {
-	return dialSCTPExtConfig(network, laddr, raddr, options, true, nil)
+func DialSCTPExt(network string, laddr, raddr *SCTPAddr, block bool, options InitMsg) (*SCTPConn, error) {
+	return dialSCTPExtConfig(network, laddr, raddr, options, block, nil)
 }
 
 // dialSCTPExtConfig - same as DialSCTP but with given SCTP options and socket configuration

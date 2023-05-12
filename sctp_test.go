@@ -122,7 +122,7 @@ func TestSCTPConcurrentAccept(t *testing.T) {
 	attempts := 10 * N
 	fails := 0
 	for i := 0; i < attempts; i++ {
-		c, err := DialSCTP("sctp", nil, ln.Addr().(*SCTPAddr))
+		c, err := DialSCTP("sctp", nil, ln.Addr().(*SCTPAddr), true)
 		if err != nil {
 			fails++
 		} else {
@@ -164,7 +164,7 @@ func TestSCTPCloseRecv(t *testing.T) {
 		}
 	}()
 
-	_, err = DialSCTP("sctp", nil, ln.Addr().(*SCTPAddr))
+	_, err = DialSCTP("sctp", nil, ln.Addr().(*SCTPAddr), true)
 	if err != nil {
 		t.Fatalf("failed to dial: %s", err)
 	}

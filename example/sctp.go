@@ -102,7 +102,7 @@ func main() {
 				Port: *lport,
 			}
 		}
-		conn, err := sctp.DialSCTP("sctp", laddr, addr)
+		conn, err := sctp.DialSCTP("sctp", laddr, addr, false)
 		if err != nil {
 			log.Fatalf("failed to dial: %v", err)
 		}
