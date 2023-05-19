@@ -27,6 +27,59 @@ import (
 	"unsafe"
 )
 
+type fdset syscall.FdSet
+
+func (s *fdset) Sys() *syscall.FdSet {
+	return (*syscall.FdSet)(s)
+}
+
+func (s *fdset) Set(fd uintptr) {
+	bits := 8 * unsafe.Sizeof(s.Bits[0])
+	if fd >= bits*uintptr(len(s.Bits)) {
+		panic("fdset: fd out of range")
+	}
+	n := fd / bits
+	m := fd % bits
+	s.Bits[n] |= 1 << m
+}
+
+func (s *fdset) IsSet(fd uintptr) bool {
+	bits := 8 * unsafe.Sizeof(s.Bits[0])
+	if fd >= bits*uintptr(len(s.Bits)) {
+		panic("fdset: fd out of range")
+	}
+	n := fd / bits
+	m := fd % bits
+	return s.Bits[n]&(1<<m) != 0
+}
+
+func WaitRead(pfd int) (bool, error) {
+
+	nfd := 1
+	for {
+		var r fdset
+		var n int
+		var err error
+		r.Set(*(*uintptr)((unsafe.Pointer(&pfd))))
+		for {
+			n, err = syscall.Select(nfd, r.Sys(), nil, nil, &syscall.Timeval{Sec: 2, Usec: 0})
+			if err != syscall.EINTR {
+				break
+			}
+		}
+		if err != nil {
+			return false, err
+		}
+		if n > 0 {
+			if r.IsSet(*(*uintptr)(unsafe.Pointer(&pfd))) {
+				return false, nil
+			}
+			return true, nil
+		}
+		return true, nil
+	}
+}
+
 func setsockopt(fd int, optname, optval, optlen uintptr) (uintptr, uintptr, error) {
 	// FIXME: syscall.SYS_SETSOCKOPT is undefined on 386
 	r0, r1, errno := syscall.Syscall6(syscall.SYS_SETSOCKOPT,
@@ -313,8 +366,14 @@ func dialSCTPExtConfig(network string, laddr, raddr *SCTPAddr, options InitMsg, 
 	}
 
 	_, err = SCTPConnect(sock, raddr)
-	if err != nil {
+	if err != nil && (block || err != syscall.EINPROGRESS) {
 		return nil, err
+	}
+	if err == syscall.EINPROGRESS {
+		valid, err := WaitRead(sock)
+		if err != nil || !valid {
+			return nil, err
+		}
 	}
 	return NewSCTPConn(sock, nil), nil
 }
