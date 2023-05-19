@@ -53,30 +53,40 @@ func (s *fdset) IsSet(fd uintptr) bool {
 	return s.Bits[n]&(1<<m) != 0
 }
 
-func WaitRead(pfd int) (bool, error) {
+func WaitRead(pfd int) bool {
 
-	nfd := 1
+	nfd := pfd + 1
+
 	for {
 		var r fdset
-		var n int
+		var w fdset
 		var err error
 		r.Set(*(*uintptr)((unsafe.Pointer(&pfd))))
+		w.Set(*(*uintptr)((unsafe.Pointer(&pfd))))
+
 		for {
-			n, err = syscall.Select(nfd, r.Sys(), nil, nil, &syscall.Timeval{Sec: 2, Usec: 0})
+			_, err = syscall.Select(nfd, r.Sys(), w.Sys(), nil, &syscall.Timeval{Sec: 2, Usec: 0})
 			if err != syscall.EINTR {
 				break
 			}
 		}
 		if err != nil {
-			return false, err
+			return false
 		}
-		if n > 0 {
-			if r.IsSet(*(*uintptr)(unsafe.Pointer(&pfd))) {
-				return false, nil
+		if r.IsSet(*(*uintptr)(unsafe.Pointer(&pfd))) ||
+			w.IsSet(*(*uintptr)(unsafe.Pointer(&pfd))) {
+
+			var optval int = 0
+			if optval, err = syscall.GetsockoptInt(pfd, syscall.SOL_SOCKET, syscall.SO_ERROR); err != nil {
+				return false
 			}
-			return true, nil
+
+			if optval > 0 {
+				return false
+			}
+			return true
 		}
-		return true, nil
+		return false
 	}
 }
 
@@ -370,8 +380,8 @@ func dialSCTPExtConfig(network string, laddr, raddr *SCTPAddr, options InitMsg, 
 		return nil, err
 	}
 	if err == syscall.EINPROGRESS {
-		valid, err := WaitRead(sock)
-		if err != nil || !valid {
+		valid := WaitRead(sock)
+		if !valid {
 			return nil, err
 		}
 	}
