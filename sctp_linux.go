@@ -27,6 +27,10 @@ import (
 	"unsafe"
 )
 
+const (
+	EpollEventsNum = 8
+)
+
 type fdset syscall.FdSet
 
 func (s *fdset) Sys() *syscall.FdSet {
@@ -76,7 +80,7 @@ func WaitRead(pfd int) bool {
 		if r.IsSet(*(*uintptr)(unsafe.Pointer(&pfd))) ||
 			w.IsSet(*(*uintptr)(unsafe.Pointer(&pfd))) {
 
-			var optval int = 0
+			var optval int
 			if optval, err = syscall.GetsockoptInt(pfd, syscall.SOL_SOCKET, syscall.SO_ERROR); err != nil {
 				return false
 			}
@@ -88,6 +92,46 @@ func WaitRead(pfd int) bool {
 		}
 		return false
 	}
+}
+
+func WaitReadPoll(pfd int) bool {
+	var event syscall.EpollEvent
+	var events [EpollEventsNum]syscall.EpollEvent
+
+	epfd, e := syscall.EpollCreate1(0)
+	if e != nil {
+		panic("epoll: create failed")
+	}
+	defer syscall.Close(epfd)
+
+	event.Events = syscall.EPOLLIN | syscall.EPOLLOUT
+	event.Fd = int32(pfd)
+	if e = syscall.EpollCtl(epfd, syscall.EPOLL_CTL_ADD, pfd, &event); e != nil {
+		panic("epoll_ctl: failed")
+	}
+
+	for {
+		nevents, e := syscall.EpollWait(epfd, events[:], 500)
+		if e != nil {
+			break
+		}
+
+		for ev := 0; ev < nevents; ev++ {
+			if int(events[ev].Fd) == pfd {
+				var optval int
+				var err error
+				if optval, err = syscall.GetsockoptInt(pfd, syscall.SOL_SOCKET, syscall.SO_ERROR); err != nil {
+					return false
+				}
+
+				if optval > 0 {
+					return false
+				}
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func setsockopt(fd int, optname, optval, optlen uintptr) (uintptr, uintptr, error) {
