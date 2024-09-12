@@ -424,7 +424,7 @@ func dialSCTPExtConfig(network string, laddr, raddr *SCTPAddr, options InitMsg, 
 		return nil, err
 	}
 	if err == syscall.EINPROGRESS {
-		valid := WaitRead(sock)
+		valid := WaitReadPoll(sock)
 		if !valid {
 			return nil, err
 		}
