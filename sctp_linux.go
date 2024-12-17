@@ -110,6 +110,7 @@ func WaitReadPoll(pfd int) bool {
 		panic("epoll_ctl: failed")
 	}
 
+	retries := 0
 	for {
 		nevents, e := syscall.EpollWait(epfd, events[:], 500)
 		if e != nil {
@@ -129,6 +130,12 @@ func WaitReadPoll(pfd int) bool {
 				}
 				return true
 			}
+		}
+		if nevents == 0 {
+			retries++
+		}
+		if retries > 3 {
+			break
 		}
 	}
 	return false
